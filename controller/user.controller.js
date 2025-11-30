@@ -44,10 +44,10 @@ exports.createUser = (role) => {
         userPending: 'pending'
       });
 
-      if (role === "admin") {
-        newUser.isAdmin = true;
-        await newUser.save();
-      }
+      // if (role === "admin") {
+      //   newUser.isAdmin = true;
+      //   await newUser.save();
+      // }
       res.status(201).json({
         message: `${role} created successfully: ${newUser.name}`,
         data: newUser,
@@ -98,10 +98,10 @@ exports.editUser = async (req, res) => {
 exports.editUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userActive, userPending } = req.body;
+    const { userActive, userPending ,role} = req.body;
     const updatedUser = await User.findByIdAndUpdate(
       id,
-      { userActive, userPending },
+      { userActive, userPending ,role },
       {
         new: true,
         runValidators: true,

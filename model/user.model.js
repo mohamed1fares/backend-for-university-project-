@@ -15,10 +15,10 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'admin'],
         default: 'user'
     },
-    isAdmin: {
-        type: Boolean,
-        default: false
-    },
+    // isAdmin: {
+    //     type: Boolean,
+    //     default: false
+    // },
     location:{
         type: String,
         required: true,
@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema({
     nationalID:{
         type: Number,
         required: true,
-        // unique: true,
+        unique: true,
         minlength: 10,
     }
     ,
