@@ -27,8 +27,16 @@ exports.createUser = (role) => {
       } = req.body;
 
       // الصورة من Multer
-      const image = req.file ? req.file.path : null;
-
+      // const image = req.file ? req.file.path : null;
+      let image = null;
+      if (req.file) {
+        // نحول المسار النسبي/الـ windows backslashes إلى forward slashes
+        // خزن فقط الجزء بالنسبة للمجلد uploads عشان تبني URL في الفرانت بسهولة
+        const fullPath = req.file.path.replace(/\\/g, '/'); // لعنصر التوافق على ويندوز
+        // إذا أردت تخزين path بالنسبة للـ uploads فقط:
+        const idx = fullPath.indexOf('/uploads/');
+        image = idx !== -1 ? fullPath.slice(idx + 1) : `uploads/${req.file.filename}`;
+      }
       const newUser = await User.create({
         fristName,
         lastName,
@@ -40,7 +48,7 @@ exports.createUser = (role) => {
         nationalID,
         image,
         role,
-        userActive: 'active',
+        userActive: 'notActive',
         userPending: 'pending'
       });
 
