@@ -42,7 +42,7 @@ exports.getVulnerabilities = async (req, res) => {
   try {
     const vulnerabilities = await Vulnerability.find();
     res.status(200).json({
-      message: "Vulnerabilities fetched successfully",
+      message: "Vulnerabilities fetched successfully all of data",
       data: vulnerabilities,
     });
   } catch (error) {
@@ -54,22 +54,38 @@ exports.getVulnerabilities = async (req, res) => {
 };
 
 
+
 exports.getVulnerabilitiesById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const vulnerabilities = await Vulnerability.find({ _id: id });
-    res.status(200).json({
-      message: "Vulnerabilities fetched successfully",
-      data: vulnerabilities,
-    });
-  }
-  catch (error) {
-    res.status(500).json({
-      message: "Error fetching vulnerabilities",
-      error: error.message,
-    });
+    const ids = req.body.ids; // expecting an array of strings
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "ids array required" });
+    }
+    const vulns = await Vulnerability.find({ _id: { $in: ids } });
+    return res.json(vulns);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 };
+
+
+// exports.getVulnerabilitiesById = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const vulnerabilities = await Vulnerability.find({ _id: id });
+//     res.status(200).json({
+//       message: "Vulnerabilities fetched successfully by id",
+//       data: vulnerabilities,
+//     });
+//   }
+//   catch (error) {
+//     res.status(500).json({
+//       message: "Error fetching vulnerabilities",
+//       error: error.message,
+//     });
+//   }
+// };
 
 exports.editVulnerability = async (req, res) => {
   try {

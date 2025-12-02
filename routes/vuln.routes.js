@@ -10,6 +10,11 @@ const {authorize} = require('../middlewares/role.middelware');
 
 router.post("/", authenticate, authorize('admin'), uploadVulnFile, addVulnerability);
 router.get("/", authenticate, getVulnerabilities);
-router.get("/:id", authenticate, getVulnerabilitiesById);
+router.post("/getByIds", authenticate, getVulnerabilitiesById); // new route
 router.put("/:id", authenticate, authorize('admin'), uploadVulnFile, editVulnerability);
+
+
+
+
+
 module.exports = router;

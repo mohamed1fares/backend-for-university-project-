@@ -5,7 +5,7 @@ const {authenticate} = require('../middlewares/auth.middleware');
 const {authorize} = require('../middlewares/role.middelware');
 
 
-router.get('/url', authenticate, authorize('admin'), getUrls);
+router.get('/url', authenticate, getUrls);
 router.post('/url', authenticate, postUrl);
 router.put('/report', authenticate, authorize('admin'), addReportUrl);
 router.get('/url/:id', authenticate, getUrlsById);

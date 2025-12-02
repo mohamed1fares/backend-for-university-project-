@@ -104,18 +104,6 @@ if(detected){
         
 
 
-        
-
-
-
-
-
-
-
-
-
-
-
     } catch (err) {
         res.status(500).json({
             message: "Failed to create result",
@@ -130,10 +118,10 @@ if(detected){
 
 exports.getResultsByUrl = async (req, res) => {
     try {
-        const { urlId } = req.params;
-        const results = await Result.find({ url: urlId })
-            .populate("vulnerability", "name severity isActive")
-            .populate("url", "originalUrl");
+        const { id } = req.params;
+        const results = await Result.find({ url: id })
+            // .populate("vulnerability", "name severity isActive")
+            // .populate("url", "originalUrl");
         res.status(200).json({
             message: "Results fetched successfully",
             data: results
