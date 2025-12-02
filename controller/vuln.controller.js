@@ -106,4 +106,10 @@ exports.editVulnerability = async (req, res) => {
       error: error.message,
     });
   }
+
+
+
+
+
+
 };

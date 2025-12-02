@@ -13,7 +13,7 @@ exports.authenticate = async (req, res, next)=>{
         const decoded = JWT.verify(token, process.env.JWT_KEY);
          const user = await User.findById(decoded.id).select('-password');
          req.user = user;
-         console.log(user);
+        //  console.log(user);
          
     }
     catch(error){
