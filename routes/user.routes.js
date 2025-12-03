@@ -6,8 +6,8 @@ const {authenticate} = require('../middlewares/auth.middleware');
 const {authorize} = require('../middlewares/role.middelware');
 const upload = require('../middlewares/uploads.middelware');
 
+router.get('/:id', authenticate, getUserById);
 router.get('/',authenticate, authorize('admin') ,getUsers);
-router.get('/:id', authenticate, authorize('admin'), getUserById);
 router.post('/admin', createUser('admin'));
 router.post('/user',  upload.single('image'),createUser('user'));
 router.put('/edit/:id',authenticate, editUser);

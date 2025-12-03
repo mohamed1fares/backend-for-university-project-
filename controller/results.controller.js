@@ -131,5 +131,19 @@ exports.getResultsByUrl = async (req, res) => {
             message: "Failed to fetch results",
             error: err.message
         });
+        
     }
 };
+
+
+
+
+
+exports.getResults = async (req, res) => {
+    try {
+        const result = await Result.find()
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json({ message: 'get URLs Error', error: error.message });
+    }
+}
