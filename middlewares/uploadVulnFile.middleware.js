@@ -4,12 +4,11 @@ const path = require("path");
 // مكان تخزين الملفات
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "vulnerabilityFiles"); // الفولدر اللي هيتحط فيه الملف
+    cb(null, "vulnerabilityFiles"); // مكان التخزين
   },
   filename: (req, file, cb) => {
-    const uniqueName =
-      Date.now() + "-" + Math.round(Math.random() * 1e9) + path.extname(file.originalname);
-    cb(null, uniqueName);
+    // تم التعديل هنا لاستخدام الاسم الأصلي للملف القادم من الطلب
+    cb(null, file.originalname);
   },
 });
 
