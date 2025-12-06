@@ -40,7 +40,8 @@ function runScriptWorker(scriptFullPath, payloadPath) {
         }
 
         // تشغيل البايثون
-        const python = spawn('python', [ // أو 'python3' حسب السيرفر
+        const command = process.platform === "win32" ? "py" : "python3";
+        const python = spawn(command, [ // أو 'python3' حسب السيرفر
             '-u', 
             scriptFullPath, 
             '--payload', payloadPath, 
