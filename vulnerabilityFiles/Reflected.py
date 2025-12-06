@@ -1,0 +1,433 @@
+#!/usr/bin/env python3
+
+
+import argparse
+import json
+import os
+import sys
+import time
+import hashlib
+import urllib.parse
+import requests
+from bs4 import BeautifulSoup
+
+
+DEFAULT_HEADERS = {"User-Agent": "xss-reflected-detector/1.0"}
+TIMEOUT = 15
+DELAY = 0.2
+MAX_SAVE_BYTES = 2 * 1024 * 1024
+
+
+UNIQUE_TOKEN = hashlib.sha1(str(time.time()).encode()).hexdigest()[:8]
+
+PAYLOAD_VARIANTS = [
+    {
+        "name": "img_onerror",
+        "value": f'"><img src=x onerror="alert(\'{UNIQUE_TOKEN}\')">',
+    },
+    {
+        "name": "svg_onload",
+        "value": f'"><svg onload="alert(\'{UNIQUE_TOKEN}\')"></svg>',
+    },
+    {
+        "name": "attr_break_onfocus",
+        "value": f'" autofocus onfocus="alert(\'{UNIQUE_TOKEN}\')" x="',
+    },
+    {
+        "name": "script_break",
+        "value": f'"></script><script>alert(\'{UNIQUE_TOKEN}\')</script>',
+    },
+]
+
+
+
+def eprint(*a, **kw):
+    print(*a, file=sys.stderr, **kw)
+
+
+def safe_mkdir(p):
+    os.makedirs(p, exist_ok=True)
+
+
+def sha8(s: str):
+    return hashlib.sha1(str(s).encode()).hexdigest()[:8]
+
+
+def save_bytes(outdir: str, url: str, content: bytes) -> str:
+    safe_mkdir(outdir)
+    u = urllib.parse.urlparse(url)
+    stamp = str(int(time.time()))
+    name = f"resp_{u.netloc.replace(':','_')}_{sha8(u.path)}_{stamp}.html"
+    path = os.path.join(outdir, name)
+    try:
+        data = (
+            content
+            if isinstance(content, (bytes, bytearray))
+            else str(content).encode("utf-8", errors="ignore")
+        )
+        if len(data) > MAX_SAVE_BYTES:
+            data = data[:MAX_SAVE_BYTES]
+        with open(path, "wb") as fh:
+            fh.write(data)
+        try:
+            os.chmod(path, 0o600)
+        except Exception:
+            pass
+        return path
+    except Exception:
+        fallback = os.path.join(outdir, f"resp_{sha8(str(content)[:100])}.html")
+        with open(fallback, "wb") as fh:
+            fh.write(
+                (content if isinstance(content, bytes) else str(content)).encode(
+                    "utf-8", errors="ignore"
+                )[:MAX_SAVE_BYTES]
+            )
+        try:
+            os.chmod(fallback, 0o600)
+        except Exception:
+            pass
+        return fallback
+
+
+def html_escape(s):
+    import html
+
+    return html.escape(s)
+
+
+
+def make_session():
+    s = requests.Session()
+    s.headers.update(DEFAULT_HEADERS)
+    return s
+
+
+def fetch(url, session, params=None, data=None, headers=None):
+    try:
+        if headers:
+            req_headers = session.headers.copy()
+            req_headers.update(headers)
+        else:
+            req_headers = session.headers
+        if data is not None:
+            r = session.post(
+                url, data=data, timeout=TIMEOUT, allow_redirects=True, headers=req_headers
+            )
+        else:
+            r = session.get(
+                url, params=params, timeout=TIMEOUT, allow_redirects=True, headers=req_headers
+            )
+        time.sleep(DELAY)
+        return r
+    except Exception as e:
+        eprint("[!] Request error:", e)
+        return None
+
+
+
+def discover_params_and_forms(session, url):
+    """
+    Returns:
+      get_params: set of likely GET param names
+      post_templates: list of POST body templates {field: "PAYLOAD" or default}
+    """
+    get_params = set()
+    post_templates = []
+
+    
+    try:
+        parsed = urllib.parse.urlparse(url)
+        qs = urllib.parse.parse_qs(parsed.query)
+        for k in qs.keys():
+            if k:
+                get_params.add(k)
+    except Exception:
+        pass
+
+ 
+    r = fetch(url, session)
+    if not r or not r.text:
+        return get_params, post_templates
+
+    try:
+        soup = BeautifulSoup(r.text, "html.parser")
+    except Exception:
+        return get_params, post_templates
+
+    for form in soup.find_all("form"):
+        method = (form.get("method") or "get").lower()
+        inputs = {}
+        for inp in form.find_all(["input", "textarea", "select"]):
+            name = inp.get("name")
+            if not name:
+                continue
+            value = inp.get("value", "")
+            inputs[name] = value
+
+        if not inputs:
+            continue
+
+        if method == "get":
+            for name in inputs.keys():
+                get_params.add(name)
+        else:
+            tpl = {}
+            first = True
+            for k, v in inputs.items():
+                if first or v == "":
+                    tpl[k] = "PAYLOAD"
+                    first = False
+                else:
+                    tpl[k] = v
+            post_templates.append(tpl)
+
+    return get_params, post_templates
+
+
+
+def detect_reflection_context(text: str, payload: str):
+
+    if not text or not payload:
+        return None
+
+    idx = text.find(payload)
+    if idx == -1:
+        return None
+
+    window = 250
+    start = max(0, idx - window)
+    end = min(len(text), idx + len(payload) + window)
+    snippet = text[start:end]
+
+    snippet_lower = snippet.lower()
+
+    if "<script" in snippet_lower:
+        return "script"
+
+    tag_start = snippet.rfind("<", 0, snippet.find(payload))
+    tag_end = snippet.find(">", snippet.find(payload))
+    if tag_start != -1 and tag_end != -1 and tag_end > tag_start:
+        tag_content = snippet[tag_start:tag_end]
+        eq_idx = tag_content.find("=")
+        if eq_idx != -1 and tag_content.find(payload) > eq_idx:
+            return "attribute"
+        return "html_tag"
+
+    return "text"
+
+
+def severity_from_context(found_raw: bool, found_escaped: bool, context: str):
+    if not found_raw:
+        return "info"
+
+    if context in ("script", "attribute"):
+        return "high"
+    if context == "html_tag":
+        return "medium"
+    if context == "text":
+        return "low"
+    return "medium"
+
+
+# ---- Reflected tests ----
+def test_reflected_get(session, base_url, param_name, payload, payload_kind, outdir):
+    params = {param_name: payload}
+    r = fetch(base_url, session, params=params)
+    saved = save_bytes(outdir, base_url, r.content) if r is not None else ""
+    text = (r.text or "") if r is not None else ""
+    found_raw = payload in text
+    found_escaped = (
+        urllib.parse.quote_plus(payload) in text
+        or html_escape(payload) in text
+        or urllib.parse.quote(payload, safe="") in text
+    )
+    context = detect_reflection_context(text, payload) if found_raw else None
+
+    return {
+        "type": "reflected_get",
+        "url": base_url,
+        "method": "GET",
+        "param": param_name,
+        "payload_kind": payload_kind,
+        "status": getattr(r, "status_code", None),
+        "saved_file": saved,
+        "found_raw": found_raw,
+        "found_escaped": found_escaped,
+        "context": context,
+    }
+
+
+def test_reflected_post(session, url, template, payload, payload_kind, outdir):
+    data = {}
+    for k, v in template.items():
+        if isinstance(v, str) and "PAYLOAD" in v:
+            data[k] = v.replace("PAYLOAD", payload)
+        elif v == "PAYLOAD":
+            data[k] = payload
+        else:
+            data[k] = v
+    r = fetch(url, session, data=data)
+    saved = save_bytes(outdir, url, r.content) if r is not None else ""
+    text = (r.text or "") if r is not None else ""
+    found_raw = payload in text
+    found_escaped = (
+        urllib.parse.quote_plus(payload) in text
+        or html_escape(payload) in text
+        or urllib.parse.quote(payload, safe="") in text
+    )
+    context = detect_reflection_context(text, payload) if found_raw else None
+
+    return {
+        "type": "reflected_post",
+        "url": url,
+        "method": "POST",
+        "params": list(data.keys()),
+        "payload_kind": payload_kind,
+        "status": getattr(r, "status_code", None),
+        "saved_file": saved,
+        "found_raw": found_raw,
+        "found_escaped": found_escaped,
+        "context": context,
+    }
+
+
+# ---- Main single-target scan (Reflected only) ----
+def run_xss_scan(task, outdir):
+    safe_mkdir(outdir)
+    session = make_session()
+
+    base = task.get("target", {}).get("url") or task.get("base_url")
+    if not base:
+        raise ValueError("no base url in task payload")
+
+    endpoints = task.get("endpoints") or [base]
+    endpoints = list(dict.fromkeys(endpoints))
+
+    issues = []
+    issue_id = 1
+    stats = {"xss_reflected": 0}
+
+    raw_results = []
+
+    default_params = {"q", "search", "query", "id", "term", "s", "searchFor", "test"}
+    extra_post_templates = [
+        {"search": "PAYLOAD"},
+        {"message": "PAYLOAD"},
+        {"username": "PAYLOAD", "password": "test"},
+        {"uname": "PAYLOAD", "pass": "test"},
+    ]
+
+    for ep in endpoints:
+        discovered_get_params, discovered_post_templates = discover_params_and_forms(
+            session, ep
+        )
+        params_to_try = sorted(discovered_get_params.union(default_params))
+        post_templates = list(discovered_post_templates) + extra_post_templates
+
+        # --- Reflected GET مع كل الـ payloads ---
+        for p in params_to_try:
+            for pv in PAYLOAD_VARIANTS:
+                r = test_reflected_get(
+                    session, ep, p, pv["value"], pv["name"], outdir
+                )
+                raw_results.append(r)
+
+                if r.get("found_raw") or r.get("found_escaped"):
+                    sev = severity_from_context(
+                        r["found_raw"], r["found_escaped"], r.get("context")
+                    )
+                    issue = {
+                        "id": issue_id,
+                        "type": "xss_reflected",
+                        "method": "GET",
+                        "param": r["param"],
+                        "url": r["url"],
+                        "severity": sev,
+                        "context": r.get("context"),
+                        "payload_kind": r["payload_kind"],
+                        "evidence_file": r["saved_file"],
+                    }
+                    issues.append(issue)
+                    stats["xss_reflected"] += 1
+                    issue_id += 1
+
+
+        for tpl in post_templates:
+            for pv in PAYLOAD_VARIANTS:
+                rpost = test_reflected_post(
+                    session, ep, tpl, pv["value"], pv["name"], outdir
+                )
+                raw_results.append(rpost)
+
+                if rpost.get("found_raw") or rpost.get("found_escaped"):
+                    sev = severity_from_context(
+                        rpost["found_raw"], rpost["found_escaped"], rpost.get("context")
+                    )
+                    issue = {
+                        "id": issue_id,
+                        "type": "xss_reflected",
+                        "method": "POST",
+                        "param": ",".join(rpost["params"]),
+                        "url": rpost["url"],
+                        "severity": sev,
+                        "context": rpost.get("context"),
+                        "payload_kind": rpost["payload_kind"],
+                        "evidence_file": rpost["saved_file"],
+                    }
+                    issues.append(issue)
+                    stats["xss_reflected"] += 1
+                    issue_id += 1
+
+    summary = {
+        "task_id": task.get("task_id"),
+        "base": base,
+        "scan_time": time.time(),
+        "issues_count": len(issues),
+        "stats": stats,
+        "findings": issues,
+        "results": raw_results,
+    }
+
+    with open(os.path.join(outdir, "summary_xss.json"), "w", encoding="utf-8") as sf:
+        json.dump(summary, sf, ensure_ascii=False, indent=2)
+
+    return summary
+
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Reflected XSS detector (GET/POST) with findings summary"
+    )
+    parser.add_argument("--payload", required=True, help="task JSON")
+    parser.add_argument("--outdir", required=True, help="output dir")
+    args = parser.parse_args()
+
+    try:
+        with open(args.payload, "r", encoding="utf-8") as pf:
+            task = json.load(pf)
+    except Exception as e:
+        eprint("[!] failed to read payload JSON:", e)
+        sys.exit(3)
+
+    outdir = args.outdir
+    safe_mkdir(outdir)
+
+    try:
+        summary = run_xss_scan(task, outdir)
+
+        
+        print(json.dumps({"status": "ok", "summary": summary}, ensure_ascii=False))
+
+
+        has_xss = summary.get("stats", {}).get("xss_reflected", 0) > 0
+        print("true" if has_xss else "false")
+
+        sys.exit(0)
+    except Exception as e:
+        eprint("[!] fatal:", e)
+        sys.exit(4)
+
+
+if __name__ == "__main__":
+    main()
