@@ -112,9 +112,22 @@ exports.runDynamicScan = async (req, res) => {
 
             // 3. تحليل بسيط للنتيجة (True/False logic)
             let isFound = false;
-            if (result && result.summary && result.summary.findings_count > 0) isFound = true;
-            if (result && Array.isArray(result.findings) && result.findings.length > 0) isFound = true;
+            if (result) {
+                // الحالة 1: البحث داخل الـ summary
+                if (result.summary) {
+                    // السكربت الأول بيستخدم findings_count
+                    if (result.summary.findings_count > 0) isFound = true;
+                    
+                    // السكربت الثاني بيستخدم issues_count (ده اللي كان ناقص)
+                    if (result.summary.issues_count > 0) isFound = true;
 
+                    // فحص المصفوفة findings داخل summary
+                    if (Array.isArray(result.summary.findings) && result.summary.findings.length > 0) isFound = true;
+                }
+
+                // الحالة 2: البحث في الجذر مباشرة (Root Level)
+                if (Array.isArray(result.findings) && result.findings.length > 0) isFound = true;
+            }
             // إرجاع النتيجة مهيكلة
             return {
                 vulnerability_id: vuln._id,
