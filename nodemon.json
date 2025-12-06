@@ -1,0 +1,8 @@
+{
+  "ignore": [
+    "temp_payloads/*",
+    "scan_results/*",
+    "uploads/*",
+    "vulnerabilityFiles/*"
+  ]
+}

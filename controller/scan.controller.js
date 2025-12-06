@@ -103,6 +103,7 @@ exports.runDynamicScan = async (req, res) => {
             const scriptPath = path.join(SCRIPTS_DIR, vuln.scriptFile);
             
             // إنشاء بايلود خاص لهذه العملية
+            console.log(`🔍 DEBUG: Looking for file at -> ${scriptPath}`);
             const payloadPath = createTempPayload(url, vuln._id);
 
             // استدعاء دالة التشغيل
