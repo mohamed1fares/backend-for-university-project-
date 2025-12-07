@@ -8,7 +8,18 @@ const urlSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     }
+    ,
+    status:{
+        type: String,
+        enum: ['High', 'low', 'Medium', 'Critical'],
+    },
+
+    numberOfvuln:{
+        type: Number,
+        default: 0
+    }
 }
+
 ,{
     timestamps: true
 })

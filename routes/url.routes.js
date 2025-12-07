@@ -9,7 +9,7 @@ router.get('/url', authenticate, getUrls);
 router.post('/url', authenticate, postUrl);
 router.put('/report', authenticate, authorize('admin'), addReportUrl);
 router.get('/url/:id', authenticate, getUrlsById);
-router.get('/user/urls', authenticate, getUrlsByUser);
+router.get('/user/urls/:id', authenticate, getUrlsByUser);
 module.exports = router;
 
 
