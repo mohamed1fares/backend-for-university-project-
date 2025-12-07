@@ -33,4 +33,4 @@ router.post('/scan-all', resultController.scanAll);
 router.get('/url/:id', authenticate,resultController.getResultsByUrl);
 router.get('/', authenticate,authorize('admin'),resultController.getAllResults);
 
-module.exports = router;
+module.exports = router;    
