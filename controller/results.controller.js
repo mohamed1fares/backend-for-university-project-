@@ -204,61 +204,63 @@ function createTempPayload(targetUrl, vulnId) {
 
 function runScriptWorker(scriptFullPath, payloadPath) {
     return new Promise((resolve) => {
-        console.log(`[Debug] Checking if file exists: ${scriptFullPath}`); // 1. تأكد من المسار
-
+        // 1. تأكد من وجود الملف
         if (!fs.existsSync(scriptFullPath)) {
             console.error(`[Error] Script file NOT found at: ${scriptFullPath}`);
             return resolve({ error: "Script file missing", vulnerable: false });
         }
 
-        const command = "python"; // تأكد إنها python أو python3 حسب جهازك
-        const python = spawn(command, ['-u', scriptFullPath, '--payload', payloadPath, '--outdir', OUTPUT_DIR]);
+        // 🔥 2. تحديد أمر البايثون حسب نظام التشغيل (حل مشكلة ENOENT)
+        // لو ويندوز استخدم 'py' أو 'python'، لو غير كده استخدم 'python3'
+        const command = process.platform === "win32" ? "py" : "python3";
+        
+        console.log(`[Debug] Spawning command: ${command} for file: ${path.basename(scriptFullPath)}`);
+
+        const python = spawn(command, [
+            '-u', 
+            scriptFullPath, 
+            '--payload', payloadPath, 
+            '--outdir', OUTPUT_DIR
+        ]);
         
         let outputData = '';
         let errorData = '';
 
-        // 2. نشوف المخرجات وهي طالعة
-        python.stdout.on('data', (data) => { 
-            const str = data.toString();
-            console.log(`[Python Output]: ${str}`); 
-            outputData += str; 
-        });
+        // تجميع المخرجات
+        python.stdout.on('data', (data) => { outputData += data.toString(); });
+        python.stderr.on('data', (err) => { errorData += err.toString(); });
 
-        // 3. نشوف لو فيه أخطاء في البايثون
-        python.stderr.on('data', (err) => { 
-            const str = err.toString();
-            console.error(`[Python Error]: ${str}`); 
-            errorData += str;
+        // منع توقف السيرفر لو البايثون نفسه فيه مشكلة تشغيل
+        python.on('error', (err) => {
+            console.error(`[Spawn Error] Failed to start Python: ${err.message}`);
+            resolve({ error: "Python spawn failed", vulnerable: false });
         });
 
         python.on('close', (code) => {
-            console.log(`[Debug] Python process closed with code: ${code}`);
-            
             // تنظيف الملف المؤقت
             try { fs.unlinkSync(payloadPath); } catch (e) {} 
 
-            // لو كان فيه خطأ في تشغيل السكريبت (Syntax Error مثلاً)
+            // لو في خطأ في الكود نفسه
             if (code !== 0 && errorData.length > 0) {
-                console.log("[Debug] Script failed execution.");
-                return resolve({ error: errorData, vulnerable: false });
+                console.log(`[Script Error Log]: ${errorData}`);
+                // ملاحظة: أحياناً أدوات السكان بتطلع أخطاء بس بتطلع نتايج برضه، هنكمل محاولة البارس
             }
 
             try {
-                // محاولة قراءة الـ JSON
+                // محاولة استخراج JSON من المخرجات
                 const firstBrace = outputData.indexOf('{');
                 const lastBrace = outputData.lastIndexOf('}');
                 
                 if (firstBrace !== -1 && lastBrace !== -1) {
                     const jsonStr = outputData.substring(firstBrace, lastBrace + 1);
                     const parsed = JSON.parse(jsonStr);
-                    console.log("[Debug] Parsed JSON successfully:", parsed);
                     resolve(parsed);
                 } else {
-                    console.log("[Debug] No valid JSON found in output.");
+                    console.log("[Debug] No valid JSON found. Raw Output:", outputData.substring(0, 100)); // طباعة أول 100 حرف بس
                     resolve({ error: "No JSON output", vulnerable: false });
                 }
             } catch (e) {
-                console.error("[Debug] Failed to parse JSON:", e.message);
+                console.error("[Debug] JSON Parse Error:", e.message);
                 resolve({ error: "JSON Parse Error", vulnerable: false });
             }
         });
@@ -269,95 +271,91 @@ function runScriptWorker(scriptFullPath, payloadPath) {
 
 exports.scanAll = async (req, res) => {
     try {
-        const targetUrlString = req.body.url; 
+        const { url } = req.body; // نأخذ الرابط من الـ body
 
-        if (!targetUrlString) {
-            return res.status(400).json({ message: "URL string is required in body" });
+        if (!url) {
+            return res.status(400).json({ message: "URL is required" });
         }
 
-        const urlDoc = await Url.findOne({ originalUrl: targetUrlString });
-
+        // 1. البحث عن الرابط في جدول Urls (أو إضافته لو مش موجود حسب المنطق بتاعك)
+        // هنا سنفترض أنه يجب أن يكون موجوداً مسبقاً
+        let urlDoc = await Url.findOne({ originalUrl: url });
         if (!urlDoc) {
-            return res.status(404).json({ message: "هذا الرابط غير موجود. يجب إضافته أولاً." });
+            // خيار: إما نرجع إيرور، أو ننشئه حالاً. هنا هنرجع إيرور للتوضيح
+            return res.status(404).json({ message: "URL needs to be added to the system first." });
         }
 
-        const vulnerabilities = await Vulnerability.find({});
+        // 2. جلب كل الثغرات المفعلة
+        const vulnerabilities = await Vulnerability.find({ isActive: true });
 
         if (vulnerabilities.length === 0) {
-            return res.status(404).json({ message: "لا توجد ثغرات مسجلة للفحص." });
+            return res.status(404).json({ message: "No active vulnerabilities found." });
         }
 
-        console.log(`[*] Starting scan for URL: ${targetUrlString}`);
+        console.log(`🚀 Starting Scan for: ${url} with ${vulnerabilities.length} scripts.`);
 
+        // 3. تشغيل الفحص بالتوازي
         const scanPromises = vulnerabilities.map(async (vuln) => {
             
-            // 1. تحديد اسم الملف
-            // ملاحظة: تأكد أن اسم ملف XSS في الفولدر هو نفس اسم الثغرة في الداتابيز
-            // مثلاً لو الثغرة اسمها "Reflected XSS"، الملف لازم يكون "Reflected XSS.py"
-            const scriptFileName = vuln.name.trim() + ".py"; 
+            // 🔥 نستخدم scriptFile المحفوظ في الداتا بيس لو موجود، أو نستخدم الاسم كاحتياطي
+            // الأفضل دائماً الاعتماد على scriptFile عشان نتجنب مشاكل الأسماء
+            let scriptFileName = vuln.scriptFile ? vuln.scriptFile : (vuln.name.trim() + ".py");
+            
+            // تنظيف الاسم (لو المسار متخزن كامل في الداتا بيس، ناخد الاسم بس)
+            scriptFileName = path.basename(scriptFileName); 
+
             const scriptFullPath = path.join(SCRIPTS_DIR, scriptFileName);
+            const payloadPath = createTempPayload(url, vuln._id);
 
-            // 2. تجهيز البايلود
-            const payloadPath = createTempPayload(targetUrlString, vuln._id);
-
-            // 3. تشغيل السكريبت
-            console.log(`[Running] Script: ${scriptFileName}`);
+            // تشغيل السكريبت
             const scriptResult = await runScriptWorker(scriptFullPath, payloadPath);
 
-            // =========================================================
-            // 4. منطق الاكتشاف (تم التحديث لدعم XSS script)
-            // =========================================================
+            // 4. تحديد هل الثغرة موجودة أم لا (Detection Logic)
             let isDetected = false;
 
-            if (scriptResult && typeof scriptResult === 'object') {
-                
-                // فحص الـ Summary (الأكثر شيوعاً)
-                if (scriptResult.summary) {
-                    // دعم SQL.py
-                    if (scriptResult.summary.findings_count > 0) isDetected = true;
-                }
-                
-                // دعم السكريبتات التي ترجع vulnerable: true مباشرة
-                else if (scriptResult.vulnerable === true || scriptResult.is_vulnerable === true) {
-                    isDetected = true;
-                }
-                
-                // دعم السكريبتات التي ترجع مصفوفة findings مباشرة
-                else if (Array.isArray(scriptResult.findings) && scriptResult.findings.length > 0) {
-                    isDetected = true;
-                }
+            if (scriptResult && !scriptResult.error) {
+                // منطق عام للكشف (SQLMap style, Generic style)
+                if (scriptResult.summary && scriptResult.summary.findings_count > 0) isDetected = true;
+                else if (scriptResult.vulnerable === true) isDetected = true;
+                else if (Array.isArray(scriptResult.findings) && scriptResult.findings.length > 0) isDetected = true;
             }
 
-            console.log(`[Result] ${vuln.name} -> Detected: ${isDetected}`);
+            console.log(`📊 Result for ${vuln.name}: ${isDetected ? 'DETECTED 🔴' : 'Safe 🟢'}`);
 
+            // 5. حفظ النتيجة في الداتا بيس (سواء كانت true أو false)
             const newResult = new Result({
                 url: urlDoc._id,
                 vulnerability: vuln._id,
-                detected: isDetected
+                detected: isDetected,
+                // scanDetails: scriptResult // ممكن تحفظ التفاصيل كاملة لو عندك حقل في الموديل
             });
 
             return newResult.save();
         });
 
+        // انتظار انتهاء جميع الفحوصات
         const savedResults = await Promise.all(scanPromises);
 
+        // إرسال الرد للفرونت إند
         return res.status(200).json({
             message: "Scan completed successfully",
-            totalScanned: savedResults.length,
+            target: url,
             results: savedResults
         });
 
     } catch (error) {
         console.error("Scan Error:", error);
-        return res.status(500).json({ message: "Server Scan Error", error: error.message });
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
 
-// ... باقي دوال الـ GET (getResultsByUrl, getAllResults) كما هي ...
+// --- باقي دوال الـ GET ---
 exports.getResultsByUrl = async (req, res) => {
     try {
         const { id } = req.params; 
-        const results = await Result.find({ url: id }).populate("vulnerability", "name severity");
+        const results = await Result.find({ url: id })
+            .populate("vulnerability", "name severity description")
+            .populate("url", "originalUrl");
         res.status(200).json({ message: "Success", data: results });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -366,7 +364,9 @@ exports.getResultsByUrl = async (req, res) => {
 
 exports.getAllResults = async (req, res) => {
     try {
-        const results = await Result.find().populate("vulnerability", "name");
+        const results = await Result.find()
+            .populate("vulnerability", "name")
+            .populate("url", "originalUrl");
         res.status(200).json(results);
     } catch (error) {
         res.status(500).json({ error: error.message });
