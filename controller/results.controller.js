@@ -252,6 +252,8 @@ exports.scanAll = async (req, res) => {
     // 1. البحث عن الرابط في جدول Urls (أو إضافته لو مش موجود حسب المنطق بتاعك)
     // هنا سنفترض أنه يجب أن يكون موجوداً مسبقاً
     let urlDoc = await Url.findOne({ originalUrl: url });
+    urlDoc.status='Scanning';
+    
     if (!urlDoc) {
       // خيار: إما نرجع إيرور، أو ننشئه حالاً. هنا هنرجع إيرور للتوضيح
       return res
@@ -280,6 +282,8 @@ exports.scanAll = async (req, res) => {
         ? vuln.scriptFile
         : vuln.name.trim() + ".py";
 
+        let severity_vuln= vuln.severity
+
       // تنظيف الاسم (لو المسار متخزن كامل في الداتا بيس، ناخد الاسم بس)
       scriptFileName = path.basename(scriptFileName);
 
@@ -294,15 +298,69 @@ exports.scanAll = async (req, res) => {
 
       if (scriptResult && !scriptResult.error) {
         // منطق عام للكشف (SQLMap style, Generic style)
-        if (scriptResult.summary && scriptResult.summary.findings_count > 0)
+        if (scriptResult.summary && scriptResult.summary.findings_count > 0){
+            isDetected = true;
+            if(severity_vuln==='Critical'&&urlDoc.severity!=='Critical'){
+              urlDoc.severity='Critical'
+            }
+            else if(severity_vuln==='High'){
+              urlDoc.severity='High'
+            }
+            else if(severity_vuln==='Medium'){
+              urlDoc.severity='Medium'
+            }
+            else if(severity_vuln==='Low'){
+              urlDoc.severity='Low'
+            }
+            urlDoc.numberOfvuln=+1;
+          urlDoc.status='Finished';
+
+          }
+        else if (scriptResult.vulnerable === true) {
           isDetected = true;
-        else if (scriptResult.vulnerable === true) isDetected = true;
+          if(severity_vuln==='Critical'){
+            urlDoc.severity='Critical'
+          }
+          else if(severity_vuln==='High'){
+            urlDoc.severity='High'
+          }
+          else if(severity_vuln==='Medium'){
+            urlDoc.severity='Medium'
+          }
+          else if(severity_vuln==='Low'){
+            urlDoc.severity='Low'
+          }
+          urlDoc.numberOfvuln=+1;
+          urlDoc.status='Finished'
+
+
+        }
         else if (
           Array.isArray(scriptResult.findings) &&
           scriptResult.findings.length > 0
         )
-          isDetected = true;
+         { isDetected = true;
+          if(severity_vuln==='Critical'){
+            urlDoc.severity='Critical'
+          }
+          else if(severity_vuln==='High'){
+            urlDoc.severity='High'
+          }
+          else if(severity_vuln==='Medium'){
+            urlDoc.severity='Medium'
+          }
+          else if(severity_vuln==='Low'){
+            urlDoc.severity='Low'
+          }
+          urlDoc.numberOfvuln=+1;
+          urlDoc.status='Finished'
+
+         }
+      }else{
+        urlDoc.status='Finished'
+        urlDoc.severity='safe'
       }
+
 
       console.log(
         `📊 Result for ${vuln.name}: ${isDetected ? "DETECTED 🔴" : "Safe 🟢"}`
@@ -315,6 +373,9 @@ exports.scanAll = async (req, res) => {
         detected: isDetected,
         // scanDetails: scriptResult // ممكن تحفظ التفاصيل كاملة لو عندك حقل في الموديل
       });
+
+      await urlDoc.save();
+
 
       return newResult.save();
     });
@@ -334,6 +395,7 @@ exports.scanAll = async (req, res) => {
       .status(500)
       .json({ message: "Internal Server Error", error: error.message });
   }
+
 };
 
 // --- باقي دوال الـ GET ---
@@ -347,6 +409,7 @@ exports.getResultsByUrl = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+
 };
 
 exports.getAllResults = async (req, res) => {

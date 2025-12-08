@@ -7,13 +7,18 @@ const urlSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
+    },
+    status:{
+        type:String,
+        enum:['UnScaned','Scanning','Finished','Failed'],
+        default:'UnScaned'
     }
     ,
-    status:{
+    severity:{
         type: String,
-        enum: ['High', 'low', 'Medium', 'Critical'],
+        enum: ['High', 'low', 'Medium', 'Critical','safe'],
+        default: 'safe'
     },
-
     numberOfvuln:{
         type: Number,
         default: 0
