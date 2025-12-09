@@ -1,122 +1,3 @@
-// const Result = require('../model/results.model');
-// const Vulnerability = require('../model/vulnerability.model');
-// const {runDynamicScan}=require("./scan.controller")
-
-// exports.Result = async (req, res) => {
-//     try {
-//         const { url, vulnerability } = req.body;
-
-//         if (!url || !vulnerability) {
-//             return res.status(400).json({
-//                 message: "url and vulnerability are required"
-//             });
-//         }
-
-//         // 1) نجيب الـ vulnerability
-//         const vuln = await Vulnerability.findById(vulnerability)
-//             .select("isActive");
-//             if (!vuln) {
-//             return res.status(404).json({
-//                 message: "Vulnerability not found"
-//             });
-//         }
-
-//         if (vuln.isActive) {
-
-//         //باقي كود طارق هنا
-//         //هنا انا كشفت اذا كانت الثغره تعمل ام لا
-//         //ولو تعمل يبدا كود طارق التسيت عليها
-
-//         // لو طارق اكتشف ان الثغره شغاله يعمل
-//         // detected: true
-//         //detected: false
-
-// if(detected){
-
-//             // 2) نعمل result ونخزن فيه isActive
-//             const newResult = new Result({
-//                 url,
-//                 vulnerability,
-//                 detected: true   // ← ← هنا أهم نقطة
-//             });
-
-//             const savedResult = await newResult.save();
-//             // 3) نحفظ
-
-//             // 4) نرجّع النتيجة مع populate
-//             const populated = await Result.findById(savedResult._id)
-//                 .populate("vulnerability", "name severity isActive")
-//                 .populate("url", "originalUrl");
-
-//             res.status(201).json({
-//                 message: "Result created successfully",
-//                 data: populated
-//             });
-//         }
-//         else{
-//             // 2) نعمل result ونخزن فيه isActive
-//             const newResult = new Result({
-//                 url,
-//                 vulnerability,
-//                 detected: false   // ← ← هنا أهم نقطة
-//             });
-//             const savedResult = await newResult.save();
-//             // 3) نحفظ
-//         }
-//         // 4) نرجّع النتيجة مع populate
-//         const populated = await Result.findById(savedResult._id)
-//             .populate("vulnerability", "name severity isActive")
-//             .populate("url", "originalUrl");
-//         res.status(201).json({
-//             message: "Result created successfully",
-//             data: populated
-//         });
-// }
-
-//         else{
-//             res.status(400).json({
-//                 message: "Vulnerability is not active",
-
-//             });
-//         }
-
-//     } catch (err) {
-//         res.status(500).json({
-//             message: "Failed to create result",
-//             error: err.message
-//         });
-//     }
-// };
-
-// exports.getResultsByUrl = async (req, res) => {
-//     try {
-//         const { id } = req.params;
-//         const results = await Result.find({ url: id })
-//             // .populate("vulnerability", "name severity isActive")
-//             // .populate("url", "originalUrl");
-//         res.status(200).json({
-//             message: "Results fetched successfully",
-//             data: results
-//         });
-//     } catch (err) {
-//         res.status(500).json({
-//             message: "Failed to fetch results",
-//             error: err.message
-//         });
-
-//     }
-// };
-
-// exports.getResults = async (req, res) => {
-//     try {
-//         const result = await Result.find()
-//         res.status(200).json(result);
-//     } catch (error) {
-//         res.status(500).json({ message: 'get URLs Error', error: error.message });
-//     }
-// }
-
-// backend/controllers/resultController.js
 const mongoose = require("mongoose");
 const path = require("path");
 const fs = require("fs");
@@ -124,7 +5,7 @@ const { spawn } = require("child_process");
 
 // استدعاء الموديلات
 const Url = require("../model/url.model");
-const Result = require("../model/results.model");
+const Report = require("../model/report.model"); // الموديل الجديد
 const Vulnerability = require("../model/vulnerability.model");
 
 // --- 1. إعداد المسارات ---
@@ -136,8 +17,16 @@ const TEMP_DIR = path.join(__dirname, "../temp_payloads");
 if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
-// --- 2. دوال المساعدة (Helpers) ---
+// --- ترتيب خطورة الثغرات ---
+const SEVERITY_RANK = {
+  'safe': 0,
+  'Low': 1, 'low': 1,
+  'Medium': 2,
+  'High': 3,
+  'Critical': 4
+};
 
+// --- 2. دوال المساعدة (Helpers) ---
 function createTempPayload(targetUrl, vulnId) {
   const filename = `payload_${vulnId}_${Date.now()}.json`;
   const filePath = path.join(TEMP_DIR, filename);
@@ -153,86 +42,34 @@ function createTempPayload(targetUrl, vulnId) {
 
 function runScriptWorker(scriptFullPath, payloadPath) {
   return new Promise((resolve) => {
-    // 1. تأكد من وجود الملف
     if (!fs.existsSync(scriptFullPath)) {
-      console.error(`[Error] Script file NOT found at: ${scriptFullPath}`);
       return resolve({ error: "Script file missing", vulnerable: false });
     }
 
-    // 🔥 2. تحديد أمر البايثون حسب نظام التشغيل (حل مشكلة ENOENT)
-    // لو ويندوز استخدم 'py' أو 'python'، لو غير كده استخدم 'python3'
-    let command = "python3";
-
-    if (process.platform === "win32") {
-      try {
-        execSync("py --version", { stdio: "ignore" });
-        command = "py"; // لو py موجود
-      } catch {
-        command = "python"; // لو py مش موجود
-      }
-    }
-    console.log(
-      `[Debug] Spawning command: ${command} for file: ${path.basename(
-        scriptFullPath
-      )}`
-    );
-
+    let command = process.platform === "win32" ? "py" : "python3";
+    
     const python = spawn(command, [
-      "-u",
-      scriptFullPath,
-      "--payload",
-      payloadPath,
-      "--outdir",
-      OUTPUT_DIR,
+      "-u", scriptFullPath, "--payload", payloadPath, "--outdir", OUTPUT_DIR
     ]);
 
     let outputData = "";
-    let errorData = "";
-
-    // تجميع المخرجات
-    python.stdout.on("data", (data) => {
-      outputData += data.toString();
-    });
-    python.stderr.on("data", (err) => {
-      errorData += err.toString();
-    });
-
-    // منع توقف السيرفر لو البايثون نفسه فيه مشكلة تشغيل
-    python.on("error", (err) => {
-      console.error(`[Spawn Error] Failed to start Python: ${err.message}`);
-      resolve({ error: "Python spawn failed", vulnerable: false });
-    });
+    
+    python.stdout.on("data", (data) => { outputData += data.toString(); });
+    python.stderr.on("data", (err) => console.error(`[Py Err]: ${err}`)); // Log errors only
 
     python.on("close", (code) => {
-      // تنظيف الملف المؤقت
-      try {
-        fs.unlinkSync(payloadPath);
-      } catch (e) {}
-
-      // لو في خطأ في الكود نفسه
-      if (code !== 0 && errorData.length > 0) {
-        console.log(`[Script Error Log]: ${errorData}`);
-        // ملاحظة: أحياناً أدوات السكان بتطلع أخطاء بس بتطلع نتايج برضه، هنكمل محاولة البارس
-      }
+      try { fs.unlinkSync(payloadPath); } catch (e) {} // تنظيف
 
       try {
-        // محاولة استخراج JSON من المخرجات
         const firstBrace = outputData.indexOf("{");
         const lastBrace = outputData.lastIndexOf("}");
-
         if (firstBrace !== -1 && lastBrace !== -1) {
-          const jsonStr = outputData.substring(firstBrace, lastBrace + 1);
-          const parsed = JSON.parse(jsonStr);
-          resolve(parsed);
+            const jsonStr = outputData.substring(firstBrace, lastBrace + 1);
+            resolve(JSON.parse(jsonStr));
         } else {
-          console.log(
-            "[Debug] No valid JSON found. Raw Output:",
-            outputData.substring(0, 100)
-          ); // طباعة أول 100 حرف بس
-          resolve({ error: "No JSON output", vulnerable: false });
+            resolve({ error: "No JSON output", vulnerable: false });
         }
       } catch (e) {
-        console.error("[Debug] JSON Parse Error:", e.message);
         resolve({ error: "JSON Parse Error", vulnerable: false });
       }
     });
@@ -240,185 +77,142 @@ function runScriptWorker(scriptFullPath, payloadPath) {
 }
 
 // --- 3. دالة الفحص الرئيسية (scanAll) ---
-
 exports.scanAll = async (req, res) => {
   try {
-    const { url } = req.body; // نأخذ الرابط من الـ body
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ message: "URL is required" });
 
-    if (!url) {
-      return res.status(400).json({ message: "URL is required" });
-    }
-
-    // 1. البحث عن الرابط في جدول Urls (أو إضافته لو مش موجود حسب المنطق بتاعك)
-    // هنا سنفترض أنه يجب أن يكون موجوداً مسبقاً
+    // 1. تجهيز الرابط وتحديث حالته
     let urlDoc = await Url.findOne({ originalUrl: url });
-    urlDoc.status='Scanning';
-    
-    if (!urlDoc) {
-      // خيار: إما نرجع إيرور، أو ننشئه حالاً. هنا هنرجع إيرور للتوضيح
-      return res
-        .status(404)
-        .json({ message: "URL needs to be added to the system first." });
-    }
+    if (!urlDoc) return res.status(404).json({ message: "URL needs to be added first." });
 
-    // 2. جلب كل الثغرات المفعلة
+    urlDoc.status = 'Scanning';
+    urlDoc.numberOfvuln = 0;
+    urlDoc.severity = 'safe';
+    await urlDoc.save();
+
+    // 2. جلب الثغرات
     const vulnerabilities = await Vulnerability.find({ isActive: true });
-
     if (vulnerabilities.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No active vulnerabilities found." });
+      urlDoc.status = 'Finished';
+      await urlDoc.save();
+      return res.status(404).json({ message: "No active vulnerabilities found." });
     }
 
-    console.log(
-      `🚀 Starting Scan for: ${url} with ${vulnerabilities.length} scripts.`
-    );
+    console.log(`🚀 Starting Full Scan for: ${url}`);
 
-    // 3. تشغيل الفحص بالتوازي
+    // 3. تشغيل الفحص بالتوازي (Parallel Execution)
     const scanPromises = vulnerabilities.map(async (vuln) => {
-      // 🔥 نستخدم scriptFile المحفوظ في الداتا بيس لو موجود، أو نستخدم الاسم كاحتياطي
-      // الأفضل دائماً الاعتماد على scriptFile عشان نتجنب مشاكل الأسماء
-      let scriptFileName = vuln.scriptFile
-        ? vuln.scriptFile
-        : vuln.name.trim() + ".py";
-
-        let severity_vuln= vuln.severity
-
-      // تنظيف الاسم (لو المسار متخزن كامل في الداتا بيس، ناخد الاسم بس)
+      let scriptFileName = vuln.scriptFile ? vuln.scriptFile : vuln.name.trim() + ".py";
       scriptFileName = path.basename(scriptFileName);
-
+      
       const scriptFullPath = path.join(SCRIPTS_DIR, scriptFileName);
       const payloadPath = createTempPayload(url, vuln._id);
 
       // تشغيل السكريبت
       const scriptResult = await runScriptWorker(scriptFullPath, payloadPath);
 
-      // 4. تحديد هل الثغرة موجودة أم لا (Detection Logic)
+      // منطق الاكتشاف
       let isDetected = false;
-
       if (scriptResult && !scriptResult.error) {
-        // منطق عام للكشف (SQLMap style, Generic style)
-        if (scriptResult.summary && scriptResult.summary.findings_count > 0){
-            isDetected = true;
-            if(severity_vuln==='Critical'&&urlDoc.severity!=='Critical'){
-              urlDoc.severity='Critical'
-            }
-            else if(severity_vuln==='High'){
-              urlDoc.severity='High'
-            }
-            else if(severity_vuln==='Medium'){
-              urlDoc.severity='Medium'
-            }
-            else if(severity_vuln==='Low'){
-              urlDoc.severity='Low'
-            }
-            urlDoc.numberOfvuln=+1;
-          urlDoc.status='Finished';
-
-          }
-        else if (scriptResult.vulnerable === true) {
-          isDetected = true;
-          if(severity_vuln==='Critical'){
-            urlDoc.severity='Critical'
-          }
-          else if(severity_vuln==='High'){
-            urlDoc.severity='High'
-          }
-          else if(severity_vuln==='Medium'){
-            urlDoc.severity='Medium'
-          }
-          else if(severity_vuln==='Low'){
-            urlDoc.severity='Low'
-          }
-          urlDoc.numberOfvuln=+1;
-          urlDoc.status='Finished'
-
-
-        }
-        else if (
-          Array.isArray(scriptResult.findings) &&
-          scriptResult.findings.length > 0
-        )
-         { isDetected = true;
-          if(severity_vuln==='Critical'){
-            urlDoc.severity='Critical'
-          }
-          else if(severity_vuln==='High'){
-            urlDoc.severity='High'
-          }
-          else if(severity_vuln==='Medium'){
-            urlDoc.severity='Medium'
-          }
-          else if(severity_vuln==='Low'){
-            urlDoc.severity='Low'
-          }
-          urlDoc.numberOfvuln=+1;
-          urlDoc.status='Finished'
-
-         }
-      }else{
-        urlDoc.status='Finished'
-        urlDoc.severity='safe'
+        if (scriptResult.summary && scriptResult.summary.findings_count > 0) isDetected = true;
+        else if (scriptResult.vulnerable === true) isDetected = true;
+        else if (Array.isArray(scriptResult.findings) && scriptResult.findings.length > 0) isDetected = true;
       }
 
+      console.log(`Checking ${vuln.name}: ${isDetected ? "DETECTED 🔴" : "Safe 🟢"}`);
 
-      console.log(
-        `📊 Result for ${vuln.name}: ${isDetected ? "DETECTED 🔴" : "Safe 🟢"}`
-      );
-
-      // 5. حفظ النتيجة في الداتا بيس (سواء كانت true أو false)
-      const newResult = new Result({
-        url: urlDoc._id,
-        vulnerability: vuln._id,
-        detected: isDetected,
-        // scanDetails: scriptResult // ممكن تحفظ التفاصيل كاملة لو عندك حقل في الموديل
-      });
-
-      await urlDoc.save();
-
-
-      return newResult.save();
+      // *تغيير جوهري:* هنا نرجع كائن بيانات بدلاً من الحفظ في قاعدة البيانات
+      return {
+        vulnerabilityId: vuln._id,
+        vulnerabilityName: vuln.name,
+        severity: vuln.severity,
+        isDetected: isDetected,
+        technicalDetail: scriptResult // نخزن نتيجة البايثون هنا للرجوع إليها
+      };
     });
 
-    // انتظار انتهاء جميع الفحوصات
-    const savedResults = await Promise.all(scanPromises);
+    // 4. تجميع كل النتائج في مصفوفة واحدة
+    const resultsArray = await Promise.all(scanPromises);
 
-    // إرسال الرد للفرونت إند
+    // 5. حساب الإحصائيات (العدد والخطورة القصوى)
+    let detectedCount = 0;
+    let maxSeverityRank = 0;
+    let finalSeverity = 'safe';
+
+    resultsArray.forEach(item => {
+      if (item.isDetected) {
+        detectedCount++;
+        const currentRank = SEVERITY_RANK[item.severity] || 0;
+        if (currentRank > maxSeverityRank) {
+          maxSeverityRank = currentRank;
+          finalSeverity = item.severity === 'Low' ? 'low' : item.severity;
+        }
+      }
+    });
+
+    // 6. إنشاء وحفظ تقرير الفحص (Scan Report)
+    const newReport = new Report({
+        url: urlDoc._id,
+        summary: {
+            totalVulnerabilities: detectedCount,
+            highestSeverity: finalSeverity
+        },
+        details: resultsArray // حفظنا المصفوفة الكاملة هنا
+    });
+
+    await newReport.save();
+
+    // 7. تحديث حالة الرابط النهائية
+    urlDoc.status = 'Finished';
+    urlDoc.numberOfvuln = detectedCount;
+    urlDoc.severity = detectedCount > 0 ? finalSeverity : 'safe';
+    await urlDoc.save();
+
     return res.status(200).json({
       message: "Scan completed successfully",
-      target: url,
-      results: savedResults,
+      reportId: newReport._id, // نرجع رقم التقرير للفرونت
+      summary: newReport.summary,
+      results: resultsArray
     });
+
   } catch (error) {
     console.error("Scan Error:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    if (req.body.url) {
+        await Url.findOneAndUpdate({ originalUrl: req.body.url }, { status: 'Failed' });
+    }
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
-
 };
 
-// --- باقي دوال الـ GET ---
-exports.getResultsByUrl = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const results = await Result.find({ url: id })
-      .populate("vulnerability", "name severity description")
-      .populate("url", "originalUrl");
-    res.status(200).json({ message: "Success", data: results });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+// --- 4. تحديث دوال جلب البيانات ---
 
+// جلب كل التقارير لرابط معين (History)
+exports.getReportsByUrl = async (req, res) => {
+    try {
+      const { id } = req.params; // هنا id هو الـ Url ID
+      // بنجيب التقارير ونرتبها بالأحدث أولاً
+      const reports = await Report.find({ url: id })
+        .sort({ scanDate: -1 }) 
+        .populate("url", "originalUrl");
+        
+      res.status(200).json({ message: "Success", data: reports });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
 };
 
-exports.getAllResults = async (req, res) => {
-  try {
-    const results = await Result.find()
-      .populate("vulnerability", "name")
-      .populate("url", "originalUrl");
-    res.status(200).json(results);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+// جلب تفاصيل تقرير محدد (لما المستخدم يضغط على Show Details)
+exports.getReportById = async (req, res) => {
+    try {
+        const { reportId } = req.params;
+        const report = await Report.findById(reportId)
+            .populate("url", "originalUrl");
+            
+        if (!report) return res.status(404).json({ message: "Report not found" });
+
+        res.status(200).json({ data: report });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };

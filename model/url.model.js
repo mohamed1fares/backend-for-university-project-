@@ -16,7 +16,7 @@ const urlSchema = new mongoose.Schema({
     ,
     severity:{
         type: String,
-        enum: ['High', 'low', 'Medium', 'Critical','safe'],
+        enum: ['High', 'Low', 'Medium', 'Critical','safe'],
         default: 'safe'
     },
     numberOfvuln:{
