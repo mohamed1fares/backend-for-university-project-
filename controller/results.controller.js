@@ -231,3 +231,26 @@ exports.getReportById = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+
+
+// ... (باقي الدوال في الأعلى)
+
+// --- دالة جديدة: جلب كل التقارير للإحصائيات ---
+exports.getAllReports = async (req, res) => {
+  try {
+    // 1. جلب كل التقارير
+    // 2. ترتيبها بالأحدث أولاً (sort)
+    // 3. عمل populate لبيانات الرابط (اختياري بس مفيد)
+    const reports = await Report.find()
+      .sort({ scanDate: -1 }) 
+      .populate("url", "originalUrl");
+
+    // إرجاع المصفوفة مباشرة (Array of Reports)
+    res.status(200).json(reports);
+
+  } catch (error) {
+    console.error("Error fetching all reports:", error);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
