@@ -51,7 +51,7 @@ app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/urls', require('./routes/url.routes'));
 app.use('/api/vuln', require('./routes/vuln.routes'));
 app.use('/api/results', require('./routes/results.routes'));
-app.use('/api/scan', require('./routes/scan.routes'));
+// app.use('/api/scan', require('./routes/scan.routes'));
 
 
 // basic error handler (so multer/file errors return nice message)

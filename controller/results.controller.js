@@ -5,7 +5,7 @@ const { spawn } = require("child_process");
 
 // استدعاء الموديلات
 const Url = require("../model/url.model");
-const Report = require("../model/report.model"); // الموديل الجديد
+const Report = require("../model/results.model"); // الموديل الجديد
 const Vulnerability = require("../model/vulnerability.model");
 
 // --- 1. إعداد المسارات ---
