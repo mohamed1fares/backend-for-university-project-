@@ -1,5 +1,7 @@
 const { log } = require("console");
-const Vulnerability = require("../model/vulnerability.model");  
+const Vulnerability = require("../model/vulnerability.model"); 
+const logger = require('../utils/logger.utils');
+
 
 exports.addVulnerability = async (req, res) => {
   try {
@@ -23,6 +25,7 @@ exports.addVulnerability = async (req, res) => {
       scriptFile,
       isActive
     });
+    logger.info(`Vulnerability created successfully: ${name}`);
 
     res.status(201).json({
       message: "Vulnerability created successfully",
@@ -30,6 +33,8 @@ exports.addVulnerability = async (req, res) => {
     });
 
   } catch (error) {
+    logger.warn(`Error creating vulnerability: ${name}`);
+
     res.status(500).json({
       message: "Error creating vulnerability",
       error: error.message,
@@ -96,11 +101,16 @@ exports.editVulnerability = async (req, res) => {
     if (!updatedVuln) {
       return res.status(404).json({ message: "Vulnerability not found" });
     }
+
+    logger.info(`Vulnerability updated successfully: ${updatedVuln.name}`);
+
     res.status(200).json({
       message: "Vulnerability updated successfully",
       data: updatedVuln,
     });
   } catch (error) {
+    logger.warn(`Error updating vulnerability: ${error.message}`);
+
     res.status(500).json({
       message: "Error updating vulnerability",
       error: error.message,

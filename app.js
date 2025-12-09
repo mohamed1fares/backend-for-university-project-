@@ -36,8 +36,20 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ message: err.message || 'Internal Server Error' });
 });
 
+
 // start server AFTER DB connected
 const PORT = process.env.PORT || 3000;
+
+
+//لازم تبقي في اخر الكود
+///error handing
+const AppError = require('./utils/app.error-utils');
+const golbalErrorHandler = require('./middlewares/error-handelar.middelware');
+app.use((req,res,next)=>{
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+})
+app.use(golbalErrorHandler);
+
 
 (async () => {
   try {

@@ -1,9 +1,12 @@
 const User = require("../model/user.model");
 const bcrypt = require('bcrypt');
+const logger = require('../utils/logger.utils');
+
 
 exports.getUsers = async (req, res) => {
   try {
     const users = await User.find().select("-password -__v");
+
     res.status(200).json(users);
   } catch (error) {
     res
@@ -56,6 +59,8 @@ exports.createUser = (role) => {
       //   newUser.isAdmin = true;
       //   await newUser.save();
       // }
+      logger.info(`created user successfully: ${newUser.name}`);
+
       res.status(201).json({
         message: `${role} created successfully: ${newUser.name}`,
         data: newUser,
@@ -94,6 +99,12 @@ exports.editUser = async (req, res) => {
       data: updatedUser,
     });
   } catch (error) {
+    const { id } = req.params;
+    const updatedUser = await User.findById(id).select("-password -__v");
+
+
+    logger.warn(`Failed to update user: ${updatedUser.email} ; error is : ${error.message}`);
+
     res.status(500).json({
       message: "Failed to update user",
       error: error.message,
@@ -109,7 +120,7 @@ exports.editUserStatus = async (req, res) => {
     const { userActive, userPending ,role} = req.body;
     const updatedUser = await User.findByIdAndUpdate(
       id,
-      { userActive, userPending ,role },
+      { userActive, userPending ,role,fristName },
       {
         new: true,
         runValidators: true,
@@ -120,11 +131,15 @@ exports.editUserStatus = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    logger.info(`User status updated successfully: ${fristName}`);
+
     res.status(200).json({
       message: "User status updated successfully",
       data: updatedUser,
     });
   } catch (error) {
+    logger.warn(`Failed to update user status: ${error.message}`);
+
     res.status(500).json({
       message: "Failed to update user status",
       error: error.message,
@@ -141,11 +156,18 @@ exports.getUserById = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    // logger.info(`User retrieved successfully: ${user.name}`);
+
     res.status(200).json({
       message: "User retrieved successfully",
       data: user,
     });
   } catch (error) {
+    const { id } = req.params;
+    const user = await User.findById(id).select("-password -__v");
+
+    logger.warn(`Failed to retrieve user: ${user.email} ; error is :${error.message}`);
+
     res.status(500).json({
       message: "Failed to retrieve user",
       error: error.message,

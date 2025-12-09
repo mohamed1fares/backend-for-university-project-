@@ -1,0 +1,86 @@
+2025-12-09 21:57:50 || INFO: || || user login successfully: mf7059708@gmail.com
+2025-12-09 22:13:40 || INFO: || || user login successfully: mf7059708@gmail.com
+2025-12-09 22:13:42 || INFO: || || User retrieved successfully: undefined
+2025-12-09 22:13:48 || INFO: || || User retrieved successfully: undefined
+2025-12-09 22:13:59 || WARN: || || Failed to update user: Validation failed: phone: Path `phone` (`01156`, length 5) is shorter than the minimum allowed length (7).
+2025-12-09 22:17:40 || INFO: || || User retrieved successfully: undefined
+2025-12-09 22:17:50 || INFO: || || user login successfully: mf7059708@gmail.com
+2025-12-09 22:19:41 || INFO: || || User retrieved successfully: undefined
+2025-12-09 22:19:51 || INFO: || || user login successfully: mf7059708@gmail.com
+2025-12-09 22:19:53 || INFO: || || User retrieved successfully: undefined
+2025-12-09 22:19:57 || INFO: || || User retrieved successfully: undefined
+2025-12-09 22:20:02 || WARN: || || Failed to update user: mf7059708@gmail.com error is : Validation failed: phone: Path `phone` (`0115`, length 4) is shorter than the minimum allowed length (7).
+2025-12-09 22:44:52 || INFO: || || user login successfully: nijnjbhyubh@gmail.com
+2025-12-09 22:48:30 || INFO: || || Scan completed successfully for ID: 69373fe87ffbd95414d4a985
+2025-12-09 22:49:26 || INFO: || || Scan completed successfully for ID: 692c74187d5ffa7bf749fd3f
+2025-12-09 22:49:28 || INFO: || || Scan completed successfully for ID: 692c3fdebbe97d7c531b8f81
+2025-12-09 22:49:30 || INFO: || || Scan completed successfully for ID: 692c70b47d5ffa7bf749fcbc
+2025-12-09 22:49:33 || INFO: || || Scan completed successfully for ID: 692c70ce7d5ffa7bf749fcc1
+2025-12-09 22:49:35 || INFO: || || Scan completed successfully for ID: 692c3fd6bbe97d7c531b8f7d
+2025-12-09 22:49:38 || INFO: || || Scan completed successfully for ID: 69304dd732a366a94ee31160
+2025-12-09 22:49:40 || INFO: || || Scan completed successfully for ID: 69304cd132a366a94ee31138
+2025-12-09 22:49:41 || INFO: || || Scan completed successfully for ID: 69304cb432a366a94ee3112d
+2025-12-09 22:49:41 || INFO: || || Scan completed successfully for ID: 69304c2932a366a94ee31102
+2025-12-09 22:53:40 || INFO: || || Post URL successfully: http://testphp.vulnweb.com/login.php
+2025-12-09 22:56:49 || INFO: || || Scan completed successfully for ID: 69388c541df30b5ec29ea4cf
+2025-12-09 23:39:33 || INFO: || || created user successfully: undefined
+2025-12-09 23:40:07 || INFO: || || user login successfully: mohamed.fares202202@gmail.com
+2025-12-09 23:41:06 || INFO: || || Post URL successfully: http://testphp.vulnweb.com/search.php
+2025-12-09 23:43:54 || INFO: || || Scan completed successfully for ID: 6938977212dc03249da58f98
+2025-12-09 23:43:55 || INFO: || || Scan completed successfully for ID: 6938977212dc03249da58f98
+2025-12-09 23:47:29 || INFO: || || Post URL successfully: http://tesweb.com
+2025-12-09 23:48:18 || INFO: || || Scan completed successfully for ID: 693898f112dc03249da58fe1
+2025-12-09 23:48:18 || INFO: || || Scan completed successfully for ID: 693898f112dc03249da58fe1
+2025-12-09 23:48:41 || INFO: || || Scan completed successfully for ID: 6938977212dc03249da58f98
+2025-12-09 23:48:46 || INFO: || || Scan completed successfully for ID: 6938977212dc03249da58f98
+2025-12-09 23:49:09 || INFO: || || Scan completed successfully for ID: 6938977212dc03249da58f98
+2025-12-09 23:50:30 || INFO: || || Post URL successfully: www.testdasdsaf.com
+2025-12-09 23:50:33 || INFO: || || Scan completed successfully for ID: 693899a612dc03249da59017
+2025-12-09 23:50:34 || INFO: || || Scan completed successfully for ID: 693899a612dc03249da59017
+2025-12-09 23:50:54 || INFO: || || Scan completed successfully for ID: 693899a612dc03249da59017
+2025-12-09 23:51:00 || INFO: || || Post URL successfully: http://tesweb.com
+2025-12-09 23:51:04 || INFO: || || Scan completed successfully for ID: 693898f112dc03249da58fe1
+2025-12-09 23:51:39 || INFO: || || Post URL successfully: http://tesweb.com/
+2025-12-09 23:51:44 || INFO: || || Scan completed successfully for ID: 693899c412dc03249da5904f
+2025-12-09 23:51:45 || INFO: || || Scan completed successfully for ID: 693899c412dc03249da5904f
+2025-12-09 23:52:20 || INFO: || || Scan completed successfully for ID: 693899c412dc03249da5904f
+2025-12-09 23:52:25 || INFO: || || Scan completed successfully for ID: 693899eb12dc03249da59071
+2025-12-09 23:52:26 || INFO: || || Scan completed successfully for ID: 693899eb12dc03249da59071
+2025-12-09 23:57:56 || INFO: || || Post URL successfully: http://teswvkljhlkmfsideb.com
+2025-12-09 23:58:21 || INFO: || || Scan completed successfully for ID: 69389b6412dc03249da590a3
+2025-12-09 23:58:22 || INFO: || || Scan completed successfully for ID: 69389b6412dc03249da590a3
+2025-12-09 23:58:57 || INFO: || || Post URL successfully: ww.tesweb.com
+2025-12-09 23:59:01 || INFO: || || Scan completed successfully for ID: 69389ba112dc03249da590c4
+2025-12-09 23:59:01 || INFO: || || Scan completed successfully for ID: 69389ba112dc03249da590c4
+2025-12-09 23:59:09 || INFO: || || Scan completed successfully for ID: 69389ba112dc03249da590c4
+2025-12-09 23:59:17 || INFO: || || Post URL successfully: http://tesweb.com/
+2025-12-10 00:00:05 || INFO: || || Scan completed successfully for ID: 69389bb512dc03249da590fc
+2025-12-10 00:00:05 || INFO: || || Scan completed successfully for ID: 69389bb512dc03249da590fc
+2025-12-10 00:00:25 || INFO: || || user login successfully: mf7059708@gmail.com
+2025-12-10 00:04:45 || INFO: || || user login successfully: mohammed3mto25mm@gmail.com
+2025-12-10 00:04:51 || INFO: || || Post URL successfully: www.dasdasdda.com
+2025-12-10 00:04:52 || INFO: || || Scan completed successfully for ID: 69389d036da58fb89e501f35
+2025-12-10 00:04:53 || INFO: || || Scan completed successfully for ID: 69389d036da58fb89e501f35
+2025-12-10 00:05:33 || INFO: || || Scan completed successfully for ID: 69389d036da58fb89e501f35
+2025-12-10 00:05:39 || INFO: || || Post URL successfully: www.dsadasdasd.com
+2025-12-10 00:05:41 || INFO: || || Scan completed successfully for ID: 69389d336da58fb89e501f64
+2025-12-10 00:05:41 || INFO: || || Scan completed successfully for ID: 69389d336da58fb89e501f64
+2025-12-10 00:06:17 || INFO: || || Scan completed successfully for ID: 69389d336da58fb89e501f64
+2025-12-10 00:08:17 || INFO: || || Post URL successfully: www.sadasdasda.com
+2025-12-10 00:08:19 || INFO: || || Scan completed successfully for ID: 69389dd145ad5f244f00bb41
+2025-12-10 00:08:19 || INFO: || || Scan completed successfully for ID: 69389dd145ad5f244f00bb41
+2025-12-10 00:12:39 || INFO: || || Post URL successfully: http://testphp.vulnweb.com/search.php
+2025-12-10 00:14:51 || INFO: || || Scan completed successfully for ID: 69389ed799f8c0b59cae2dd8
+2025-12-10 00:14:52 || INFO: || || Scan completed successfully for ID: 69389ed799f8c0b59cae2dd8
+2025-12-10 00:20:10 || INFO: || || user login successfully: mohamed.fares202202@gmail.com
+2025-12-10 00:29:38 || INFO: || || user login successfully: mohamed.fares202202@gmail.com
+2025-12-10 00:29:55 || INFO: || || user login successfully: mohamed.fares202202@gmail.com
+2025-12-10 00:42:09 || INFO: || || user login successfully: mohamed.fares202202@gmail.com
+2025-12-10 00:43:18 || INFO: || || user login successfully: nijnjbhyubh@gmail.com
+2025-12-10 00:55:04 || INFO: || || user login successfully: mohamed.fares202202@gmail.com
+2025-12-10 00:55:53 || INFO: || || user login successfully: nijnjbhyubh@gmail.com
+2025-12-10 00:56:18 || INFO: || || user login successfully: mohamed.fares202202@gmail.com
+2025-12-10 00:57:06 || INFO: || || user login successfully: mf7059708@gmail.com
+2025-12-10 00:57:33 || WARN: || || Failed to update user status: fristName is not defined
+2025-12-10 00:58:40 || INFO: || || Vulnerability updated successfully: SQL
+2025-12-10 00:58:43 || INFO: || || Vulnerability updated successfully: SQL

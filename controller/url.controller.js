@@ -1,4 +1,5 @@
 const Url = require('../model/url.model');
+const logger = require('../utils/logger.utils');
 
 
 exports.postUrl = async (req, res) => {
@@ -7,8 +8,11 @@ exports.postUrl = async (req, res) => {
         const userId = req.user._id
         const newUrl = new Url({ originalUrl, report, user: userId});
         const savedUrl = await newUrl.save();
+        logger.info(`Post URL successfully: ${originalUrl}`);
+
         res.status(201).json(savedUrl);
     } catch (error) {
+        logger.warn(`Post URL Error: ${error.message}`);
         res.status(500).json({ message: 'post URL Error', error: error.message });
     }
 };
@@ -30,8 +34,11 @@ exports.addReportUrl = async (req, res) => {
             { report },
             { new: true }
         );
+        logger.info(`add Report URL successfully: ${report}`);
+
         res.status(200).json(updatedUrl);
     } catch (error) {
+        logger.warn(`add Report URL Error: ${error.message}`);
         res.status(500).json({ message: 'add Report URL Error', error: error.message });
     }
 };
