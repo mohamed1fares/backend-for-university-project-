@@ -117,7 +117,7 @@ exports.editUser = async (req, res) => {
 exports.editUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userActive, userPending ,role} = req.body;
+    const { userActive, userPending ,role,fristName} = req.body;
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { userActive, userPending ,role,fristName },

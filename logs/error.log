@@ -1,0 +1,208 @@
+2025-12-10 22:04:11 || ERROR: || || Error occured [GET ||/https://example.com/profile.jpg
+      Can't find /https://example.com/profile.jpg on this server! ||stack :  Error: Can't find /https://example.com/profile.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 22:04:11 || ERROR: || || Error occured [GET ||/https://yourdomain.com/uploads/user1.jpg
+      Can't find /https://yourdomain.com/uploads/user1.jpg on this server! ||stack :  Error: Can't find /https://yourdomain.com/uploads/user1.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 22:04:11 || ERROR: || || Error occured [GET ||/uploads/1764526956239_.jpg
+      Can't find /uploads/1764526956239_.jpg on this server! ||stack :  Error: Can't find /uploads/1764526956239_.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 22:04:11 || ERROR: || || Error occured [GET ||/uploads/1764527181055_.jpg
+      Can't find /uploads/1764527181055_.jpg on this server! ||stack :  Error: Can't find /uploads/1764527181055_.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 22:05:03 || ERROR: || || Error occured [GET ||/https://example.com/profile.jpg
+      Can't find /https://example.com/profile.jpg on this server! ||stack :  Error: Can't find /https://example.com/profile.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 22:05:03 || ERROR: || || Error occured [GET ||/https://yourdomain.com/uploads/user1.jpg
+      Can't find /https://yourdomain.com/uploads/user1.jpg on this server! ||stack :  Error: Can't find /https://yourdomain.com/uploads/user1.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 22:05:03 || ERROR: || || Error occured [GET ||/uploads/1764526956239_.jpg
+      Can't find /uploads/1764526956239_.jpg on this server! ||stack :  Error: Can't find /uploads/1764526956239_.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 22:05:03 || ERROR: || || Error occured [GET ||/uploads/1764527181055_.jpg
+      Can't find /uploads/1764527181055_.jpg on this server! ||stack :  Error: Can't find /uploads/1764527181055_.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 23:22:45 || ERROR: || || Error occured [GET ||/https://example.com/profile.jpg
+      Can't find /https://example.com/profile.jpg on this server! ||stack :  Error: Can't find /https://example.com/profile.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 23:22:45 || ERROR: || || Error occured [GET ||/https://yourdomain.com/uploads/user1.jpg
+      Can't find /https://yourdomain.com/uploads/user1.jpg on this server! ||stack :  Error: Can't find /https://yourdomain.com/uploads/user1.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 23:22:45 || ERROR: || || Error occured [GET ||/uploads/1764526956239_.jpg
+      Can't find /uploads/1764526956239_.jpg on this server! ||stack :  Error: Can't find /uploads/1764526956239_.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 23:22:45 || ERROR: || || Error occured [GET ||/uploads/1764527181055_.jpg
+      Can't find /uploads/1764527181055_.jpg on this server! ||stack :  Error: Can't find /uploads/1764527181055_.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 23:22:55 || ERROR: || || Error occured [GET ||/https://example.com/profile.jpg
+      Can't find /https://example.com/profile.jpg on this server! ||stack :  Error: Can't find /https://example.com/profile.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 23:22:55 || ERROR: || || Error occured [GET ||/https://yourdomain.com/uploads/user1.jpg
+      Can't find /https://yourdomain.com/uploads/user1.jpg on this server! ||stack :  Error: Can't find /https://yourdomain.com/uploads/user1.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 23:22:55 || ERROR: || || Error occured [GET ||/uploads/1764526956239_.jpg
+      Can't find /uploads/1764526956239_.jpg on this server! ||stack :  Error: Can't find /uploads/1764526956239_.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]
+2025-12-10 23:22:55 || ERROR: || || Error occured [GET ||/uploads/1764527181055_.jpg
+      Can't find /uploads/1764527181055_.jpg on this server! ||stack :  Error: Can't find /uploads/1764527181055_.jpg on this server!
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\app.js:49:8
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)
+    at next (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:291:5)
+    at Layer.handleRequest (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\lib\layer.js:147:12)
+    at trimPrefix (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:342:13)
+    at D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:297:9
+    at processParams (D:\Unverstiy\G_project\backend\backend-for-university-project-\node_modules\router\index.js:582:12)] || undefined
+    ]

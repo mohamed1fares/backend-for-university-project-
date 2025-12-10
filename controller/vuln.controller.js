@@ -1,6 +1,9 @@
 const { log } = require("console");
 const Vulnerability = require("../model/vulnerability.model"); 
 const logger = require('../utils/logger.utils');
+const fs = require('fs');  
+const path = require('path');
+const SCRIPTS_DIR = path.join(__dirname, '../vulnerabilityFiles');
 
 
 exports.addVulnerability = async (req, res) => {
@@ -95,12 +98,38 @@ exports.getVulnerabilitiesById = async (req, res) => {
 exports.editVulnerability = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
-    const updatedVuln = await Vulnerability.findByIdAndUpdate(id, updateData, { new: true });
+    
+    // 1. البحث عن الثغرة القديمة أولاً عشان نعرف اسم الملف القديم
+    const oldVuln = await Vulnerability.findById(id);
 
-    if (!updatedVuln) {
+    if (!oldVuln) {
       return res.status(404).json({ message: "Vulnerability not found" });
     }
+
+    let updateData = { ...req.body };
+
+    // 2. هل قام المستخدم برفع ملف جديد؟
+    if (req.file) {
+      updateData.scriptFile = req.file.filename; 
+
+      // 🔥🔥 3. حذف الملف القديم (تنظيف السيرفر) 🔥🔥
+      if (oldVuln.scriptFile) {
+        const oldFilePath = path.join(SCRIPTS_DIR, oldVuln.scriptFile);
+        
+        // التأكد إن الملف موجود فعلاً قبل محاولة حذفه
+        if (fs.existsSync(oldFilePath)) {
+            try {
+                fs.unlinkSync(oldFilePath); // حذف الملف
+                console.log(`🗑️ Old script deleted: ${oldVuln.scriptFile}`);
+            } catch (err) {
+                console.error(`❌ Failed to delete old script: ${err.message}`);
+            }
+        }
+      }
+    }
+
+    // 4. تحديث البيانات في قاعدة البيانات
+    const updatedVuln = await Vulnerability.findByIdAndUpdate(id, updateData, { new: true });
 
     logger.info(`Vulnerability updated successfully: ${updatedVuln.name}`);
 
@@ -108,18 +137,12 @@ exports.editVulnerability = async (req, res) => {
       message: "Vulnerability updated successfully",
       data: updatedVuln,
     });
+
   } catch (error) {
     logger.warn(`Error updating vulnerability: ${error.message}`);
-
     res.status(500).json({
       message: "Error updating vulnerability",
       error: error.message,
     });
   }
-
-
-
-
-
-
 };

@@ -17,4 +17,5 @@ router.put("/:id", authenticate, authorize('admin'), uploadVulnFile, editVulnera
 
 
 
+
 module.exports = router;
