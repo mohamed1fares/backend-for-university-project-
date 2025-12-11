@@ -6,6 +6,9 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db.config');
 const cors = require('cors');
 const path = require('path');
+const logger = require('./utils/logger.utils');
+
+
 
 dotenv.config();
 
@@ -27,7 +30,7 @@ app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/urls', require('./routes/url.routes'));
 app.use('/api/vuln', require('./routes/vuln.routes'));
 app.use('/api/results', require('./routes/results.routes'));
-
+app.use('/api/logs', require('./routes/log.routes'));
 
 // basic error handler (so multer/file errors return nice message)
 app.use((err, req, res, next) => {
@@ -56,6 +59,7 @@ app.use(golbalErrorHandler);
     await connectDB(); // تأكد أن connectDB يعيد promise
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
+      logger.info(`Server is running on port ${PORT}`);
     //   console.log(`Serving uploads folder from: ${uploadsPath}`);
     });
   } catch (err) {

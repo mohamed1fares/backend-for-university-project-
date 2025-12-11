@@ -50,7 +50,7 @@ exports.addReportUrl = async (req, res) => {
 exports.getUrlsByUser = async (req, res) => {
     try {
         const userId = req.user._id;
-        const urls = await Url.find({ user: userId }).populate('user', 'username email');
+        const urls = await Url.find({ user: userId }).populate('user', 'fristName lastName email');
         res.status(200).json(urls);
     } catch (error) {
         res.status(500).json({ message: 'get URLs by User Error', error: error.message });
